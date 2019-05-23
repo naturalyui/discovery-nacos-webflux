@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--日志级别从低到高分为TRACE < DEBUG < INFO < WARN < ERROR < FATAL
+如果设置为WARN，则低于WARN的信息都不会输出。对于Loggers中level的定义同样适用。-->
+<!--使用packages属性告知log4j2我们自定义的plugin所在的package; 注意多个package是以 , 进行分割 -->
+<configuration status="WARN" packages="com.example.common.util.log">
+    <Properties>
+        <Property name="baseDir">logs/${thread:threadName}</Property>
+        <Property name="ip">${ip:ip}</Property>
+    </Properties>
+    <appenders>
+        <!--  输出控制台的配置 -->
+        <Console name="console" target="SYSTEM_OUT">
+            <!--  控制台只输出level及以上级别的信息（onMatch），其他的直接拒绝（onMismatch） -->
+            <ThresholdFilter level="trace" onMatch="ACCEPT" onMismatch="DENY"/>
+            <!--  这个都知道是输出日志的格式 -->
+            <PatternLayout pattern="[LOGID:%X{logId}]%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%logger{50}] - %msg%n"/>
+        </Console>
+
+        <!--配置自定义日志，按天输出-->
+        <RollingFile name="debug" fileName="${baseDir}/debug.log"
+                     filePattern="${baseDir}/%d{yyyy-MM}/debug.%d{yyyy-MM-dd}.%i.log.gz">
+            <PatternLayout pattern="[LOGID:%X{logId}]%date [%thread] %-5level [%logger{50}] %file:%line - %msg%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy modulate="true" interval="1"/>
+                <SizeBasedTriggeringPolicy size="50M"/>
+            </Policies>
+            <!-- 最大保存文件数 -->
+            <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
+
+        <!-- 把系统所有的error全部打到这个文件里  -->
+        <RollingFile name="error" fileName="${baseDir}/error.log"
+                     filePattern="${baseDir}/%d{yyyy-MM}/error.%d{yyyy-MM-dd}.%i.log.gz">
+            <ThresholdFilter level="error" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="[LOGID:%X{logId}]%date [%thread] %-5level [%logger{50}] %file:%line - %msg%n"/>
+            <Policies>
+                <!--interval:最小触发粒度，根据filePattern决定  modulate指明是否对interval进行调节，默认为false-->
+                <TimeBasedTriggeringPolicy modulate="true" interval="1"/>
+                <SizeBasedTriggeringPolicy size="50M"/>
+            </Policies>
+            <!-- 最大保存文件数 -->
+            <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
+
+        <!-- 请求日志 -->
+        <RollingFile name="warn" fileName="${baseDir}/warn.log"
+                     filePattern="${baseDir}/%d{yyyy-MM}/warn.%d{yyyy-MM-dd}.%i.log.gz">
+            <ThresholdFilter level="warn" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="[LOGID:%X{logId}]%date [%thread] %-5level [%logger{50}] %file:%line - %msg%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy modulate="true" interval="1"/>
+                <SizeBasedTriggeringPolicy size="50M"/>
+            </Policies>
+            <!-- 最大保存文件数 -->
+            <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
+
+    </appenders>
+
+    <!-- 然后定义logger，只有定义了logger并引入的appender，appender才会生效 -->
+    <loggers>
+        <!--&lt;!&ndash;过滤掉spring和mybatis的一些无用的DEBUG信息&ndash;&gt;-->
+        <!--<logger name="org.springframework" level="ERROR"/>-->
+        <!--<logger name="org.mybatis" level="ERROR"/>-->
+        <!--<logger name="org.hibernate" level="ERROR"/>-->
+        <!--<logger name="springfox.documentation" level="ERROR"/>-->
+        <logger name="com.xxl" level="ERROR"/>
+        <logger name="com.netflix.config" level="ERROR"/>
+
+        <root level="INFO">
+            <appender-ref ref="console"/>
+            <appender-ref ref="debug"/>
+            <appender-ref ref="warn"/>
+            <appender-ref ref="error"/>
+        </root>
+
+        <!--&lt;!&ndash; additivity="true" 的意思是会在控制台也输入一份&ndash;&gt;-->
+        <!--<logger name="debug" level="info" additivity="true">-->
+            <!--<appender-ref ref="debug"/>-->
+        <!--</logger>-->
+
+    </loggers>
+</configuration>
